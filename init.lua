@@ -216,7 +216,8 @@ vim.keymap.set('c', '%%', "<C-R>=expand('%:h').'/'<cr>")
 vim.keymap.set('n', '<leader>p', ':bufdo set ei-=Syntax | do Syntax | hardcopy! >%:t.ps')
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.keymap.set('n', '<leader>w', ':StripTrailingWhitespace<cr>')
-
+vim.keymap.set('n', '<leader>gg', ':Ggrep <C-R><C-W>')
+vim.keymap.set('n', '<leader>u', ':UndotreeToggle<cr>')
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -760,7 +761,7 @@ require('lazy').setup({
     cmd = { 'ConformInfo' },
     keys = {
       {
-        '<leader>f',
+        '<leader>F',
         function()
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
@@ -894,6 +895,11 @@ require('lazy').setup({
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
+      -- Same completions for cmdline
+      cmdline = {
+        keymap = { preset = 'inherit' },
+        completion = { menu = { auto_show = true } },
+      },
     },
   },
 
