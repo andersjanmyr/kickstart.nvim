@@ -214,7 +214,6 @@ vim.keymap.set('n', 'k', 'gk')
 vim.keymap.set('n', '<Leader>e', ":e <C-R>=expand('%:p:h') . '/' <cr>")
 vim.keymap.set('c', '%%', "<C-R>=expand('%:h').'/'<cr>")
 vim.keymap.set('n', '<leader>p', ':bufdo set ei-=Syntax | do Syntax | hardcopy! >%:t.ps')
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.keymap.set('n', '<leader>w', ':StripTrailingWhitespace<cr>')
 vim.keymap.set('n', '<leader>gg', ':Ggrep <C-R><C-W>')
 vim.keymap.set('n', '<leader>u', ':UndotreeToggle<cr>')
@@ -230,6 +229,11 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function()
     vim.hl.on_yank()
   end,
+})
+
+vim.api.nvim_create_autocmd('BufWritePost', {
+  pattern = { '*.tf' },
+  command = 'TerraformFmt',
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -453,8 +457,8 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader>f', builtin.find_files, { desc = '[F]ind files' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>f', builtin.git_files, { desc = 'Git [F]ind files' })
+      vim.keymap.set('n', '<leader>b', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -572,11 +576,11 @@ require('lazy').setup({
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
-          map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
 
           -- Fuzzy find all the symbols in your current document.
           --  Symbols are things like variables, functions, types, etc.
@@ -717,6 +721,35 @@ require('lazy').setup({
             },
           },
         },
+        phpactor = {
+          cmd = { 'phpactor', 'language-server' },
+          filetypes = { 'php' },
+          root_dir = function(pattern)
+            local cwd = vim.uv.cwd()
+            local util = require 'lspconfig.util'
+            local root = util.root_pattern('.phpactor.yml', 'composer.json', '.git')(pattern)
+
+            -- prefer cwd if root is a descendant
+            return util.path.is_descendant(cwd, root) and cwd or root
+          end,
+
+          settings = {
+            phpactor = {
+              language_server_phpstan = {
+                enabled = true,
+              },
+            },
+          },
+        },
+        pyright = {
+          cmd = { 'pyright-langserver', '--stdio' },
+          filetypes = { 'python' },
+          root_dir = function(pattern)
+            local util = require 'lspconfig.util'
+            return util.root_pattern 'Pipfile'(pattern)
+          end,
+          single_file_support = false,
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -775,7 +808,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = { c = true, cpp = true, erlang = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
@@ -787,6 +820,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        terraform = { 'terra' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
