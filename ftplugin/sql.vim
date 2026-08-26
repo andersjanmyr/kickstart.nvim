@@ -1,0 +1,1 @@
+/Users/andersjanmyr/go/pkg/mod/github.com/dimitri/sqlfmt@v0.0.0-20260808153806-53fce62cd6a5/editors/vim/ftplugin/sql.vim
